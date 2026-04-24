@@ -42,12 +42,13 @@ func (m *GCPWorkloadIdentityMutator) mutatePod(pod *corev1.Pod, idConfig GCPWork
 		pod.Annotations = map[string]string{}
 	}
 	pod.Annotations[filepath.Join(m.AnnotationDomain, WorkloadIdentityProviderAnnotation)] = *idConfig.WorkloadIdentityProvider
-	pod.Annotations[filepath.Join(m.AnnotationDomain, ServiceAccountEmailAnnotation)] = *idConfig.ServiceAccountEmail
+	if idConfig.ServiceAccountEmail != nil {
+		pod.Annotations[filepath.Join(m.AnnotationDomain, ServiceAccountEmailAnnotation)] = *idConfig.ServiceAccountEmail
+	}
 	pod.Annotations[filepath.Join(m.AnnotationDomain, AudienceAnnotation)] = audience
 	pod.Annotations[filepath.Join(m.AnnotationDomain, TokenExpirationAnnotation)] = fmt.Sprint(expirationSeconds)
 	if idConfig.InjectionMode == DirectMode {
-		// Add annotation
-		credBody, err := buildExternalCredentialsJson(*idConfig.WorkloadIdentityProvider, *idConfig.ServiceAccountEmail)
+		credBody, err := buildExternalCredentialsJson(*idConfig.WorkloadIdentityProvider, idConfig.ServiceAccountEmail)
 		if err != nil {
 			return err
 		}
@@ -55,12 +56,14 @@ func (m *GCPWorkloadIdentityMutator) mutatePod(pod *corev1.Pod, idConfig GCPWork
 	}
 
 	//
-	// calculate project from service account
+	// calculate project from service account (empty in direct-access mode)
 	//
-	matches := projectRegex.FindStringSubmatch(*idConfig.ServiceAccountEmail)
 	project := ""
-	if len(matches) >= 2 {
-		project = matches[1] // the group 0 is thw whole match
+	if idConfig.ServiceAccountEmail != nil {
+		matches := projectRegex.FindStringSubmatch(*idConfig.ServiceAccountEmail)
+		if len(matches) >= 2 {
+			project = matches[1]
+		}
 	}
 
 	//
@@ -75,7 +78,7 @@ func (m *GCPWorkloadIdentityMutator) mutatePod(pod *corev1.Pod, idConfig GCPWork
 	//
 	if idConfig.InjectionMode == GCloudMode || idConfig.InjectionMode == UndefinedMode {
 		pod.Spec.InitContainers = prependOrReplaceContainer(pod.Spec.InitContainers, gcloudSetupContainer(
-			*idConfig.WorkloadIdentityProvider, *idConfig.ServiceAccountEmail, project, m.GcloudImage, idConfig.RunAsUser, m.SetupContainerResources,
+			*idConfig.WorkloadIdentityProvider, idConfig.ServiceAccountEmail, project, m.GcloudImage, idConfig.RunAsUser, m.SetupContainerResources,
 		))
 	}
 
@@ -108,7 +111,7 @@ func (m *GCPWorkloadIdentityMutator) mutatePod(pod *corev1.Pod, idConfig GCPWork
 	return nil
 }
 
-func buildExternalCredentialsJson(wiProvider, gsaEmail string) (string, error) {
+func buildExternalCredentialsJson(wiProvider string, gsaEmail *string) (string, error) {
 	aud := fmt.Sprintf("//iam.googleapis.com/%s", wiProvider)
 	creds := NewExternalAccountCredentials(aud, gsaEmail)
 	credJson, err := creds.Render(false)

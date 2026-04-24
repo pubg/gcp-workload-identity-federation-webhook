@@ -43,4 +43,13 @@ const (
 	//
 	// Set to 'direct' or 'gcloud' to determine credential injection mode. Defaults to 'gcloud'.
 	InjectionModeAnnotation = "injection-mode"
+
+	//
+	// Annotations for ServiceAccount
+	//
+	// Set to 'service-account' or 'direct-access' to determine the GCP token exchange mode.
+	// Defaults to 'service-account'. In 'direct-access' mode, the ServiceAccountEmailAnnotation
+	// is ignored and the exchanged STS token is used to access GCP resources directly as the
+	// federated principal (no impersonation).
+	TokenExchangeModeAnnotation = "token-exchange-mode"
 )
