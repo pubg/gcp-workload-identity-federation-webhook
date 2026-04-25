@@ -72,7 +72,7 @@ var _ = Describe("GCPWorkloadIdentityMutator", func() {
 			},
 		}
 		Expect(k8sClient.Create(ctx, &saDirectAccess)).NotTo(HaveOccurred())
-		// Direct Access + GCloud Injection Service Account (Task 8)
+		// Direct Access + GCloud Injection Service Account (Task 8) — also exercises project-id annotation
 		saDirectAccessGcloud = corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
@@ -82,6 +82,7 @@ var _ = Describe("GCPWorkloadIdentityMutator", func() {
 					audienceAnnotation:          audience,
 					tokenExpirationAnnotation:   fmt.Sprint(tokenExpiration),
 					tokenExchangeModeAnnotation: string(DirectAccessMode),
+					projectIDAnnotation:         project,
 				},
 			},
 		}
@@ -361,7 +362,7 @@ var _ = Describe("GCPWorkloadIdentityMutator", func() {
 		})
 	})
 	Describe("Direct Access (GCloud Injection) Case", func() {
-		It("should inject gcloud configurations without service account impersonation", func() {
+		It("should inject gcloud configurations using project-id annotation, no service account impersonation", func() {
 			pod := &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
@@ -396,7 +397,7 @@ var _ = Describe("GCPWorkloadIdentityMutator", func() {
 						decorateDefault(gcloudSetupContainer(
 							workloadProvider,
 							nil,
-							"",
+							project,
 							GcloudImageDefault,
 							nil,
 							setupContainerResources,
@@ -405,14 +406,14 @@ var _ = Describe("GCPWorkloadIdentityMutator", func() {
 							Name:         "ictr",
 							Image:        "busybox:test",
 							VolumeMounts: volumeMountsToAddOrReplace(GCloudMode),
-							Env:          append(envVarsToAddOrReplace(GCloudMode), envVarsToAddIfNotPresent(DefaultGCloudRegionDefault, "")...),
+							Env:          append(envVarsToAddOrReplace(GCloudMode), envVarsToAddIfNotPresent(DefaultGCloudRegionDefault, project)...),
 						}),
 					},
 					Containers: []corev1.Container{decorateDefault(corev1.Container{
 						Name:         "ctr",
 						Image:        "busybox:test",
 						VolumeMounts: volumeMountsToAddOrReplace(GCloudMode),
-						Env:          append(envVarsToAddOrReplace(GCloudMode), envVarsToAddIfNotPresent(DefaultGCloudRegionDefault, "")...),
+						Env:          append(envVarsToAddOrReplace(GCloudMode), envVarsToAddIfNotPresent(DefaultGCloudRegionDefault, project)...),
 					})},
 					Volumes: m.volumesToAddOrReplace(audience, tokenExpiration, VolumeModeDefault, GCloudMode),
 				},

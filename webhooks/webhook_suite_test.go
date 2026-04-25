@@ -34,6 +34,7 @@ var (
 	runAsUserAnnotation         = filepath.Join(annotaitonDomain, RunAsUserAnnotation)
 	injectionModeAnnotation     = filepath.Join(annotaitonDomain, InjectionModeAnnotation)
 	tokenExchangeModeAnnotation = filepath.Join(annotaitonDomain, TokenExchangeModeAnnotation)
+	projectIDAnnotation         = filepath.Join(annotaitonDomain, ProjectIDAnnotation)
 	externalConfigAnnotation    = filepath.Join(annotaitonDomain, ExternalCredentialsJsonAnnotation)
 	setupContainerResources     = &corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{

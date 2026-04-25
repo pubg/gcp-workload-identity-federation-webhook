@@ -22,6 +22,7 @@ type GCPWorkloadIdentityConfig struct {
 	RunAsUser                *int64
 	InjectionMode            InjectionMode
 	TokenExchangeMode        TokenExchangeMode
+	ProjectID                *string
 
 	Audience               *string
 	TokenExpirationSeconds *int64
@@ -58,6 +59,10 @@ func NewGCPWorkloadIdentityConfig(
 
 	if v, ok := sa.Annotations[filepath.Join(annotationDomain, AudienceAnnotation)]; ok {
 		cfg.Audience = &v
+	}
+
+	if v, ok := sa.Annotations[filepath.Join(annotationDomain, ProjectIDAnnotation)]; ok {
+		cfg.ProjectID = &v
 	}
 
 	if v, ok := sa.Annotations[filepath.Join(annotationDomain, TokenExpirationAnnotation)]; ok {

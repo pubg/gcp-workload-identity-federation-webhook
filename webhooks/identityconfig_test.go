@@ -197,6 +197,49 @@ var _ = Describe("NewGCPWorkloadIdentityConfig", func() {
 				Expect(idConfig.TokenExchangeMode).To(Equal(DirectAccessMode))
 			})
 		})
+		When("ServiceAccount with project-id annotation in direct-access mode", func() {
+			It("captures the explicit ProjectID", func() {
+				projectID := `my-project`
+				sa := corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							idProviderAnnotation:        workloadProvider,
+							tokenExchangeModeAnnotation: string(DirectAccessMode),
+							projectIDAnnotation:         projectID,
+						},
+					},
+				}
+				idConfig, err := NewGCPWorkloadIdentityConfig(annotaitonDomain, sa)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(idConfig).To(BeEquivalentTo(&GCPWorkloadIdentityConfig{
+					WorkloadIdentityProvider: &workloadProvider,
+					TokenExchangeMode:        DirectAccessMode,
+					ProjectID:                &projectID,
+				}))
+			})
+		})
+		When("ServiceAccount with project-id annotation in service-account mode", func() {
+			It("captures the explicit ProjectID alongside the SA email", func() {
+				projectID := `override-project`
+				sa := corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							idProviderAnnotation: workloadProvider,
+							saEmailAnnotation:    saEmail,
+							projectIDAnnotation:  projectID,
+						},
+					},
+				}
+				idConfig, err := NewGCPWorkloadIdentityConfig(annotaitonDomain, sa)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(idConfig).To(BeEquivalentTo(&GCPWorkloadIdentityConfig{
+					WorkloadIdentityProvider: &workloadProvider,
+					ServiceAccountEmail:      &saEmail,
+					TokenExchangeMode:        ServiceAccountMode,
+					ProjectID:                &projectID,
+				}))
+			})
+		})
 	})
 	Describe("Failure Case", func() {
 		var sa corev1.ServiceAccount

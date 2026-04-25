@@ -52,4 +52,14 @@ const (
 	// is ignored and the exchanged STS token is used to access GCP resources directly as the
 	// federated principal (no impersonation).
 	TokenExchangeModeAnnotation = "token-exchange-mode"
+
+	//
+	// Annotations for ServiceAccount
+	//
+	// Optional GCP project ID, used to populate CLOUDSDK_CORE_PROJECT in mutated pods.
+	// When set, overrides the project ID extracted from ServiceAccountEmailAnnotation.
+	// Useful in 'direct-access' token-exchange-mode where no service-account-email is
+	// available, or when the workload should target a project other than the one in the
+	// service account email.
+	ProjectIDAnnotation = "project-id"
 )

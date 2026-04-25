@@ -56,12 +56,15 @@ func (m *GCPWorkloadIdentityMutator) mutatePod(pod *corev1.Pod, idConfig GCPWork
 	}
 
 	//
-	// calculate project from service account (empty in direct-access mode)
+	// resolve project: explicit ProjectID annotation wins; otherwise extract
+	// PROJECT_ID from the service account email. Empty in direct-access mode
+	// when ProjectID annotation is not set.
 	//
 	project := ""
-	if idConfig.ServiceAccountEmail != nil {
-		matches := projectRegex.FindStringSubmatch(*idConfig.ServiceAccountEmail)
-		if len(matches) >= 2 {
+	if idConfig.ProjectID != nil {
+		project = *idConfig.ProjectID
+	} else if idConfig.ServiceAccountEmail != nil {
+		if matches := projectRegex.FindStringSubmatch(*idConfig.ServiceAccountEmail); len(matches) >= 2 {
 			project = matches[1]
 		}
 	}

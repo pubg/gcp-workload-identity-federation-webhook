@@ -56,6 +56,12 @@ Note: GKE or Anthos natively support injecting workload identity for pods.  This
         # optional: Token exchange mode. Value must be one of 'service-account' (default) or 'direct-access'.
         #           Refer to the "Direct Resource Access" section for 'direct-access' mode.
         cloud.google.com/token-exchange-mode: "service-account"
+
+        # optional: GCP project ID injected as CLOUDSDK_CORE_PROJECT in mutated pods.
+        #           When unset, the webhook extracts the project ID from
+        #           cloud.google.com/service-account-email. Set this explicitly to override,
+        #           or when no SA email is available (e.g. in 'direct-access' mode).
+        cloud.google.com/project-id: "project"
     ```
 
 4. All new pods launched using the Kubernetes `ServiceAccount` will be mutated so that they can impersonate the GCP service account. Below is an example pod spec with the environment variables and volume fields mutated by the webhook.
@@ -166,6 +172,10 @@ In `direct-access` mode the webhook configures the workload to access GCP resour
         cloud.google.com/workload-identity-provider: "projects/12345/locations/global/workloadIdentityPools/on-prem-kubernetes/providers/this-cluster"
         cloud.google.com/token-exchange-mode: "direct-access"
         # cloud.google.com/service-account-email is not required (it is ignored if present)
+        # optional: project ID injected as CLOUDSDK_CORE_PROJECT for gcloud / Application Default Credentials.
+        # Without this, direct-access mode cannot derive a project ID (the workload-identity-provider only
+        # exposes the project number).
+        cloud.google.com/project-id: "my-project"
     ```
 
 2. Grant IAM bindings on the resources you want the workload to access. Bind the `principal://` (single subject) or `principalSet://` (attribute set) member, not a service account:
