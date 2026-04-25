@@ -11,11 +11,9 @@ import (
 )
 
 var projectRegex *regexp.Regexp
-var wipProjectRegex *regexp.Regexp
 
 func init() {
 	projectRegex = regexp.MustCompile(`@(.*).iam.gserviceaccount.com`)
-	wipProjectRegex = regexp.MustCompile(`^projects/([^/]+)/`)
 }
 
 func (m *GCPWorkloadIdentityMutator) mutatePod(pod *corev1.Pod, idConfig GCPWorkloadIdentityConfig) error {
@@ -58,17 +56,12 @@ func (m *GCPWorkloadIdentityMutator) mutatePod(pod *corev1.Pod, idConfig GCPWork
 	}
 
 	//
-	// resolve project: prefer PROJECT_ID from service account email,
-	// fall back to PROJECT_NUMBER from workload-identity-provider.
+	// calculate project from service account (empty in direct-access mode)
 	//
 	project := ""
 	if idConfig.ServiceAccountEmail != nil {
-		if matches := projectRegex.FindStringSubmatch(*idConfig.ServiceAccountEmail); len(matches) >= 2 {
-			project = matches[1]
-		}
-	}
-	if project == "" {
-		if matches := wipProjectRegex.FindStringSubmatch(*idConfig.WorkloadIdentityProvider); len(matches) >= 2 {
+		matches := projectRegex.FindStringSubmatch(*idConfig.ServiceAccountEmail)
+		if len(matches) >= 2 {
 			project = matches[1]
 		}
 	}
